@@ -2,51 +2,287 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prompt Refiner privacy policy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prompt Refiner: spell check for AI prompts</title>
+<meta name="description" content="Prompt Refiner checks your prompt while you type on ChatGPT, Claude, Gemini and Grok, and marks what will cost you a second message. Runs on your device.">
+<meta property="og:title" content="Prompt Refiner: spell check for AI prompts">
+<meta property="og:description" content="Get the answer you wanted, the first time. Free browser extension for ChatGPT, Claude, Gemini and Grok.">
+<meta property="og:image" content="assets/promo-440x280.png">
+<link rel="icon" href="assets/icon-128.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; font-src 'self'; base-uri 'none'; form-action 'none'">
 <style>
-  :root { color-scheme: light dark; --bg: #fbfaf7; --fg: #1d1c1a; --mut: #5f5b54; --acc: #2f6f4f; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #161614; --fg: #ecebe6; --mut: #a7a39a; --acc: #7cc4a0; } }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 44rem; margin: 0 auto; padding: 2.5rem max(16px, env(safe-area-inset-left)) 4rem; }
-  h1 { font-size: 1.8rem; line-height: 1.2; margin: 0 0 .5rem; }
-  h2 { font-size: 1.1rem; margin: 2rem 0 .4rem; color: var(--acc); }
+  @font-face { font-family: "Press Start 2P"; src: url("assets/press-start-2p.woff2") format("woff2"); font-display: swap; }
+
+  :root {
+    --bg: #faf8f5; --panel: #ffffff; --ink: #1b1a19; --mut: #5e5a55; --line: #e7e2db;
+    --red: #e5161d; --yel: #e0a400; --grn: #0f9d5c; --acc: #c3121a; --shadow: 0 18px 50px rgba(40, 20, 10, .12);
+    --box: #1d1f26; --box-ink: #f1f2f6; --box-mut: #9aa0b2; --box-line: #2d303b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141213; --panel: #1d1b1c; --ink: #f3efe9; --mut: #aaa39a; --line: #2e2a2b; --acc: #ff5a5f; --shadow: 0 18px 50px rgba(0, 0, 0, .45); }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
   a { color: var(--acc); }
-  main > p:first-of-type { color: var(--mut); }
-  ul { padding-left: 1.2rem; }
+  img { max-width: 100%; height: auto; display: block; }
+  .wrap { max-width: 68rem; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+  .pixel { font-family: "Press Start 2P", ui-monospace, monospace; letter-spacing: .02em; }
+  h1, h2, h3 { line-height: 1.15; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); letter-spacing: -.01em; }
+  .eyebrow { font-size: .62rem; color: var(--acc); text-transform: uppercase; margin-bottom: 14px; display: block; }
+  .lead { color: var(--mut); font-size: 1.12rem; max-width: 40rem; }
+  section { padding-block: clamp(56px, 9vw, 104px); }
+
+  /* Header */
+  header { padding-block: 22px; }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+  .brand img { width: 34px; height: 34px; image-rendering: pixelated; border-radius: 8px; }
+  .brand span { font-size: .72rem; line-height: 1.5; }
+  nav { display: flex; gap: 22px; font-size: .95rem; }
+  nav a { color: var(--mut); text-decoration: none; }
+  nav a:hover { color: var(--ink); }
+
+  /* Hero */
+  .hero { padding-block: clamp(36px, 7vw, 80px) clamp(56px, 9vw, 96px); }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(32px, 5vw, 64px); align-items: center; }
+  .hero h1 { font-size: clamp(2.3rem, 5.6vw, 3.9rem); letter-spacing: -.025em; margin-bottom: 20px; }
+  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, color-mix(in srgb, var(--yel) 45%, transparent) 62%); }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: 12px; font-weight: 650; text-decoration: none; font-size: 1rem; }
+  .btn.soon { background: var(--ink); color: var(--bg); cursor: default; }
+  .btn.soon small { font-weight: 500; opacity: .7; }
+  .btn.ghost { color: var(--ink); border: 1px solid var(--line); background: var(--panel); }
+  .sites { margin-top: 22px; color: var(--mut); font-size: .92rem; }
+
+  /* The prompt box mock: drawn in HTML so it stays sharp at any size */
+  .demo { position: relative; padding-bottom: 150px; }
+  .box { background: var(--box); color: var(--box-ink); border-radius: 22px; padding: 22px 22px 58px; box-shadow: var(--shadow); font-size: 1.04rem; line-height: 1.85; position: relative; }
+  .chip { position: absolute; top: -15px; left: 18px; display: flex; gap: 10px; align-items: center; background: var(--box); border: 1px solid var(--box-line); border-radius: 999px; padding: 4px 12px; font-size: .74rem; font-weight: 650; color: var(--box-mut); }
+  .chip b { color: #8b8cff; font-weight: 650; }
+  .chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .m { border-radius: 4px; padding: 1px 2px; }
+  .m.r { background: rgba(244, 0, 9, .30); box-shadow: inset 0 -3px 0 #F40009; }
+  .m.y { background: rgba(242, 183, 5, .28); box-shadow: inset 0 -3px 0 #F2B705; }
+  .m.g { background: rgba(18, 183, 106, .26); box-shadow: inset 0 -3px 0 #12B76A; }
+  .send { position: absolute; right: 16px; bottom: 14px; width: 34px; height: 34px; border-radius: 50%; background: #3b82f6; display: grid; place-items: center; color: #fff; font-weight: 700; }
+  .card { position: absolute; left: 12%; right: 4%; top: calc(100% - 140px); background: var(--box); color: var(--box-ink); border: 2px solid #F2B705; border-radius: 16px; padding: 14px 16px; box-shadow: 0 0 0 4px rgba(242, 183, 5, .15), var(--shadow); font-size: .9rem; line-height: 1.45; }
+  .card .t { font-size: .56rem; color: #F2B705; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .card .t::before { content: ""; width: 8px; height: 8px; background: #F2B705; border-radius: 2px; }
+  .card strong { display: block; margin-bottom: 3px; }
+  .card p { margin: 0; color: var(--box-mut); }
+
+  /* Colours */
+  .colors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 40px; }
+  .col { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px; border-top: 5px solid; }
+  .col.r { border-top-color: var(--red); } .col.y { border-top-color: var(--yel); } .col.g { border-top-color: var(--grn); }
+  .col h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  .col p { margin: 0 0 14px; color: var(--mut); }
+  .col code { font-family: inherit; font-size: .92rem; display: block; color: var(--ink); background: color-mix(in srgb, var(--line) 50%, transparent); border-radius: 8px; padding: 8px 10px; }
+
+  /* Before / after */
+  .ba { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 40px; }
+  .pane { border-radius: 18px; padding: 24px; border: 1px solid var(--line); background: var(--panel); min-width: 0; }
+  .pane h3 { font-size: .6rem; margin-bottom: 14px; color: var(--mut); }
+  .pane .q { font-weight: 650; margin-bottom: 14px; }
+  .pane .a { color: var(--mut); border-left: 3px solid var(--line); padding-left: 14px; margin: 0; }
+  .pane.after { border-color: color-mix(in srgb, var(--grn) 45%, var(--line)); }
+  .pane.after .a { border-left-color: var(--grn); color: var(--ink); }
+  .score { font-weight: 700; margin-top: 16px; font-size: .95rem; }
+  .pane.before .score { color: var(--red); } .pane.after .score { color: var(--grn); }
+
+  /* Results */
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 40px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 26px 24px; }
+  .stat .n { font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 750; letter-spacing: -.03em; line-height: 1; }
+  .stat .n span { color: var(--mut); font-weight: 600; font-size: .55em; }
+  .stat p { margin: 10px 0 0; color: var(--mut); }
+  .note { color: var(--mut); font-size: .88rem; margin-top: 18px; max-width: 46rem; }
+
+  /* Catches */
+  .catches { columns: 2 18rem; column-gap: 40px; margin: 32px 0 0; padding: 0; list-style: none; }
+  .catches li { break-inside: avoid; padding: 12px 0 12px 30px; border-bottom: 1px solid var(--line); position: relative; }
+  .catches li::before { content: ""; position: absolute; left: 4px; top: 21px; width: 10px; height: 10px; border-radius: 3px; background: var(--yel); }
+  .catches li.r::before { background: var(--red); } .catches li.g::before { background: var(--grn); }
+  .catches small { display: block; color: var(--mut); font-size: .9rem; }
+
+  /* Screenshots */
+  /* Each screenshot is cropped to its prompt box and card (pixels 260–1060 across, 310–570 down, of 1280×800):
+     the image is drawn 160% wide and shifted, which works in every browser. */
+  .shots { display: grid; gap: 28px; margin-top: 40px; max-width: 56rem; }
+  .shots figure { margin: 0; }
+  .crop { aspect-ratio: 800 / 260; overflow: hidden; border-radius: 14px; border: 1px solid var(--line); box-shadow: var(--shadow); background: #000; }
+  .crop img { width: 160%; max-width: none; margin-left: -32.5%; margin-top: -38.75%; }
+  .shots figcaption { color: var(--mut); font-size: .95rem; margin-top: 10px; }
+
+  /* Privacy + plans */
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 40px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 28px; min-width: 0; }
+  .panel h3 { font-size: 1.25rem; margin-bottom: 14px; }
+  .panel ul { margin: 0; padding-left: 1.1rem; color: var(--mut); }
+  .panel li { margin-bottom: 8px; }
+  .panel li strong { color: var(--ink); }
+  .tag { display: inline-block; font-size: .5rem; padding: 6px 8px; border-radius: 6px; background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--acc); margin-left: 8px; vertical-align: middle; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 34px calc(34px + env(safe-area-inset-bottom)); color: var(--mut); font-size: .9rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer a { color: var(--mut); }
+
+  @media (max-width: 860px) {
+    .hero .wrap, .ba, .two { grid-template-columns: 1fr; }
+    .colors, .stats { grid-template-columns: 1fr; }
+    nav a.hide-sm { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { animation: rise .6s .4s both cubic-bezier(.2, .8, .2, 1); }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  }
 </style>
 </head>
-<body><main>
-<h1>Prompt Refiner privacy policy</h1>
-<p>Last updated: 14 November 2026. Applies to the Prompt Refiner browser extension, version 1.0.0 and later.</p>
-<p><strong>In short: your prompts never leave your computer.</strong> Prompt Refiner checks what you type inside your browser. It has no server, sends nothing anywhere, and has no ads, analytics or tracking.</p>
-<h2>What the extension reads</h2>
-<p>On ChatGPT (chatgpt.com), Claude (claude.ai), Gemini (gemini.google.com) and Grok (grok.com) only, it reads the text in the prompt box while you type, so it can mark typos, filler and missing details. It does not read the site's answers, your chat history, or any other website.</p>
-<h2>Where your text goes</h2>
-<p>Nowhere. All checking happens on your device. The extension makes no network requests, and an automated test stops the extension from being built if its code ever could. Your prompt text is never stored, not even on your own computer.</p>
-<h2>What is stored on your computer</h2>
-<p>Using Chrome's local storage, on your device only and never synced:</p>
-<ul>
-<li>your settings (on/off, which colours to show, colour-blind mode)</li>
-<li>counts of what you saved: tokens and estimated cost per day for the last 90 days, and the total</li>
-</ul>
-<p>These are numbers only, never your text. Removing the extension deletes them.</p>
-<h2>What the extension changes</h2>
-<p>It edits your prompt box only when you click a fix (or "Fix all"). It never sends a message for you.</p>
-<h2>Permissions</h2>
-<ul>
-<li><strong>Storage:</strong> to keep the settings and counts above on your computer.</li>
-<li><strong>Access to the four chat sites:</strong> to read the prompt box and draw the marks. It runs on no other site.</li>
-</ul>
-<h2>Selling or sharing data</h2>
-<p>We collect no data, so there is nothing to sell or share. We do not use your data for advertising, credit decisions or anything unrelated to checking your prompt.</p>
-<h2>Estimates</h2>
-<p>Token counts and costs are estimates from public list prices. They are not a bill.</p>
-<h2>Third parties</h2>
-<p>ChatGPT, Claude, Gemini and Grok are trademarks of their owners. Prompt Refiner is not affiliated with them.</p>
-<h2>Changes</h2>
-<p>If a future version ever needs to send anything off your device (for example an optional AI rewrite), it will be off by default, explained here first, and only used after you turn it on.</p>
-<h2>Contact</h2>
-<p><a href="mailto:tzoober@hotmail.com">tzoober@hotmail.com</a></p>
-</main></body>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/icon-128.png" alt=""><span class="pixel">Prompt<br>Refiner</span></a>
+    <nav><a class="hide-sm" href="#how">How it works</a><a class="hide-sm" href="#results">Results</a><a href="privacy/">Privacy</a></nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow pixel">Spell check for AI prompts</span>
+      <h1>Get the answer you wanted, <em>the first time.</em></h1>
+      <p class="lead">Prompt Refiner checks your prompt while you type and marks what will cost you a second message: the typo, the filler, and the detail the AI would otherwise have to ask you for.</p>
+      <div class="cta">
+        <span class="btn soon" aria-disabled="true">Add to Chrome <small>· coming soon</small></span>
+        <a class="btn ghost" href="#how">See how it works</a>
+      </div>
+      <p class="sites">Works on ChatGPT, Claude, Gemini and Grok. Free. Your prompts never leave your computer.</p>
+    </div>
+    <div class="demo" aria-label="Example: a prompt with marks">
+      <div class="box">
+        <div class="chip"><b>Buying question</b><span><i style="background:#F40009"></i>2</span><span><i style="background:#F2B705"></i>1</span></div>
+        <span class="m r">Hi! Could you possibly</span> tell me <span class="m y">which is the best phone</span> to buy? <span class="m r">Thanks so much!</span>
+        <div class="send">↑</div>
+      </div>
+      <div class="card">
+        <div class="t pixel">Missing detail</div>
+        <strong>which is the best phone</strong>
+        <p>Add: your budget; what you will use it for; your country (prices and shops differ).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <span class="eyebrow pixel">How it works</span>
+    <h2>Three colours, like a spell checker.</h2>
+    <p class="lead">Marks appear as you type. Click one to see why, and fix it in one click. Nothing changes until you choose.</p>
+    <div class="colors">
+      <div class="col r"><h3>Red: not needed</h3><p>Typos and filler the AI doesn't need. Removing it changes nothing about the answer.</p><code>Could you possibly…</code></div>
+      <div class="col y"><h3>Yellow: missing or unclear</h3><p>What the AI would have to ask you, or guess. Adding it now saves a follow-up.</p><code>the best phone → your budget?</code></div>
+      <div class="col g"><h3>Green: already good</h3><p>Details that help the AI give you a precise answer, so you learn what works.</p><code>in a table, for beginners</code></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow pixel">One real example</span>
+    <h2>The same question, before and after.</h2>
+    <div class="ba">
+      <div class="pane before">
+        <h3 class="pixel">Without</h3>
+        <p class="q">"hi! can you please tell me which is the best laptop to buy? thanks so much"</p>
+        <p class="a">Premium picks well over a student budget, then a list of questions: what's your budget, what will you use it for, Apple or Windows…</p>
+        <p class="score">2 / 5 · needs a second message</p>
+      </div>
+      <div class="pane after">
+        <h3 class="pixel">With Prompt Refiner</h3>
+        <p class="q">"Which is the best laptop to buy? My budget is about $800, I'm a university student (notes, Office, some light photo editing), and I live in Israel."</p>
+        <p class="a">Three specific models around ₪2,700–3,000 at Israeli shops, a clear top pick, and what to look for in the screen for photo editing.</p>
+        <p class="score">5 / 5 · done in one message</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <span class="eyebrow pixel">Tested on ChatGPT</span>
+    <h2>Better first answers, fewer follow-ups.</h2>
+    <div class="stats">
+      <div class="stat"><div class="n">40% <span>→</span> 96%</div><p>first-answer quality across 11 everyday tasks</p></div>
+      <div class="stat"><div class="n">10 <span>→</span> 2</div><p>tasks that still needed a follow-up message</p></div>
+      <div class="stat"><div class="n">0</div><p>prompts sent anywhere: every check runs on your device</p></div>
+    </div>
+    <p class="note">Our own test, November 2026: each task sent to ChatGPT as written, and again after following the marks. Answers scored against checklists written before any answer was seen. Results depend on answering the questions it asks.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow pixel">What it catches</span>
+    <h2>The things that cost you a second message.</h2>
+    <ul class="catches">
+      <li>Missing details for everyday requests<small>Recipes, trips, gifts, phone and computer problems, health questions, emails, cards and more</small></li>
+      <li>"Summarize this" with nothing pasted<small>The AI would ask you to paste the text first</small></li>
+      <li>Instructions that clash<small>"very detailed but also short", "about 500 words but no more than 300"</small></li>
+      <li>Real words in the wrong place<small>"by the end of the weak", "can you right something"</small></li>
+      <li class="r">Typos and missing apostrophes<small>And it leaves file names and tech words alone</small></li>
+      <li class="r">Filler and politeness<small>"Dear ChatGPT, I hope this finds you well…"</small></li>
+      <li>Template blanks left in<small>"[PRODUCT NAME]" copied from the internet</small></li>
+      <li class="g">What you already did well<small>So you learn what a clear prompt looks like</small></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow pixel">In action</span>
+    <h2>Right where you type.</h2>
+    <div class="shots">
+      <figure><div class="crop"><img src="assets/screenshot-1.png" alt="ChatGPT prompt box with red and yellow marks and a card asking for budget, use and country" loading="lazy" width="1280" height="800"></div><figcaption>Asks for what the AI would ask back.</figcaption></figure>
+      <figure><div class="crop"><img src="assets/screenshot-2.png" alt="A card suggesting 'week' instead of 'weak'" loading="lazy" width="1280" height="800"></div><figcaption>Catches real words in the wrong place.</figcaption></figure>
+      <figure><div class="crop"><img src="assets/screenshot-3.png" alt="A card warning that two instructions clash" loading="lazy" width="1280" height="800"></div><figcaption>Flags instructions that clash.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow pixel">Private and free</span>
+    <h2>Your prompts stay yours.</h2>
+    <div class="two">
+      <div class="panel">
+        <h3>Private by design</h3>
+        <ul>
+          <li><strong>Never leaves your computer.</strong> No servers, no account, no tracking.</li>
+          <li><strong>One permission:</strong> local storage, for your settings.</li>
+          <li><strong>Never sends for you.</strong> It edits your prompt only when you click a fix.</li>
+        </ul>
+        <p style="margin:16px 0 0"><a href="privacy/">Read the privacy policy</a></p>
+      </div>
+      <div class="panel">
+        <h3>Plans</h3>
+        <ul>
+          <li><strong>Free:</strong> checks the first 80 words of every prompt, with every kind of mark.</li>
+          <li><strong>Premium</strong><span class="tag pixel">Soon</span><br>Checks whole prompts, however long, and adds an AI rewrite.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Prompt Refiner · <a href="privacy/">Privacy</a> · <a href="mailto:tzoober@hotmail.com">tzoober@hotmail.com</a></span>
+    <span>ChatGPT, Claude, Gemini and Grok are trademarks of their owners. Not affiliated.</span>
+  </div>
+</footer>
+
+</body>
 </html>
